@@ -1,8 +1,9 @@
 // NutriTrack AI — Prisma schema
-// Foundation models only (Phase 0). Profile, FoodLog, LogItem, WaterLog,
-// FoodItem etc. are added in later phases, ported from reference/database_schema.sql.
-// Note (Firebase Auth decision): identity lives in Firebase; we store the
-// Firebase UID here instead of a password hash.
+// Phase 0-1 models. FoodItem, DailyLog, MealEntry, WaterLog etc. are added in
+// later phases, ported from reference/database_schema.sql.
+// Note (Supabase Auth decision): identity lives in Supabase's `auth.users`
+// table; we store its UUID here instead of a password hash. Prisma only owns
+// the `public` schema, so this is a logical reference, not a DB-level FK.
 
 generator client {
   provider = "prisma-client"
@@ -13,15 +14,99 @@ datasource db {
   provider = "postgresql"
 }
 
+enum Gender {
+  MALE             @map("male")
+  FEMALE           @map("female")
+  OTHER            @map("other")
+  PREFER_NOT_TO_SAY @map("prefer_not_to_say")
+
+  @@map("gender_enum")
+}
+
+enum ActivityLevel {
+  SEDENTARY   @map("sedentary")
+  LIGHT       @map("light")
+  MODERATE    @map("moderate")
+  ACTIVE      @map("active")
+  VERY_ACTIVE @map("very_active")
+
+  @@map("activity_level_enum")
+}
+
+enum Goal {
+  WEIGHT_LOSS    @map("weight_loss")
+  MUSCLE_GAIN    @map("muscle_gain")
+  MAINTENANCE    @map("maintenance")
+  GENERAL_HEALTH @map("general_health")
+
+  @@map("goal_enum")
+}
+
+enum LivingSituation {
+  HOSTEL @map("hostel")
+  HOME   @map("home")
+  PG     @map("pg")
+  OTHER  @map("other")
+
+  @@map("living_situation_enum")
+}
+
+enum KitchenAccess {
+  FRIDGE_ONLY @map("fridge_only")
+  KETTLE      @map("kettle")
+  INDUCTION   @map("induction")
+  NONE        @map("none")
+
+  @@map("kitchen_access_enum")
+}
+
 model User {
-  id          String   @id @default(uuid())
-  firebaseUid String   @unique
-  email       String   @unique
-  fullName    String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  lastLoginAt DateTime?
-  isActive    Boolean  @default(true)
+  id             String    @id @default(uuid())
+  supabaseUserId String    @unique @map("supabase_user_id") // UUID from Supabase auth.users
+  email          String    @unique
+  fullName       String?   @map("full_name")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  lastLoginAt    DateTime? @map("last_login_at")
+  isActive       Boolean   @default(true) @map("is_active")
+
+  profile Profile?
 
   @@map("users")
+}
+
+model Profile {
+  id     String @id @default(uuid())
+  userId String @unique @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  age             Int
+  gender          Gender
+  heightCm        Float           @map("height_cm")
+  weightKg        Float           @map("weight_kg")
+  activityLevel   ActivityLevel   @map("activity_level")
+  goal            Goal
+  livingSituation LivingSituation @map("living_situation")
+
+  // Hostel-specific (nullable; only used when livingSituation = HOSTEL)
+  dailyFoodBudgetPkr  Float?         @map("daily_food_budget_pkr")
+  hasMessPlan         Boolean?       @map("has_mess_plan")
+  messNotes           String?        @map("mess_notes") // what's typically served
+  kitchenAccess       KitchenAccess? @map("kitchen_access")
+  dietaryRestrictions String[]       @map("dietary_restrictions")
+
+  // Calculated targets — recomputed whenever the profile changes.
+  // Derived by src/lib/targets.ts, never entered by hand.
+  bmrKcal        Float @map("bmr_kcal")
+  tdeeKcal       Float @map("tdee_kcal")
+  targetCalories Float @map("target_calories")
+  targetProteinG Float @map("target_protein_g")
+  targetCarbsG   Float @map("target_carbs_g")
+  targetFatG     Float @map("target_fat_g")
+  targetWaterMl  Int   @map("target_water_ml")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("user_profiles")
 }

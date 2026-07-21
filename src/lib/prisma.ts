@@ -2,7 +2,7 @@ import { PrismaClient } from "@/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 // Prisma 7 uses driver adapters instead of a bundled query engine.
-// The pg adapter works with any Postgres, including Neon's pooled URL.
+// The pg adapter works with any Postgres, including Supabase's session pooler URL.
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };

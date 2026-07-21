@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { BottomNav } from "@/components/BottomNav";
-import { Disclaimer } from "@/components/Disclaimer";
+import { AppChrome } from "@/components/AppChrome";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -26,8 +25,7 @@ export default function RootLayout({
         <main className="flex-1 mx-auto w-full max-w-2xl px-4 pb-28 pt-6">
           {children}
         </main>
-        <Disclaimer />
-        <BottomNav />
+        <AppChrome />
       </body>
     </html>
   );
