@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+/* ============================================================
+   NutriTrack AI design tokens (spec §8)
+   Clean, functional health-app palette. Green = primary/success,
+   white backgrounds, generous whitespace, no clutter.
+   ============================================================ */
+:root {
+  --background: #ffffff;
+  --foreground: #1b1b1b;
+
+  --primary: #2e7d32;        /* Primary Green */
+  --primary-foreground: #ffffff;
+  --secondary: #66bb6a;      /* Secondary Green (accents/success) */
+  --surface: #e8f5e9;        /* Light Green (backgrounds) */
+  --muted: #5f6368;          /* Muted text */
+  --border: #e2e8e3;
+  --warning: #f9a825;        /* Warning/alert, used sparingly */
+  --track: #e8f5e9;          /* Progress-ring/bar track */
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-surface: var(--surface);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-warning: var(--warning);
+  --color-track: var(--track);
+  --font-sans: var(--font-inter);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), system-ui, sans-serif;
+}

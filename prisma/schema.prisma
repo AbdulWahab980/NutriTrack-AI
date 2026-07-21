@@ -1,0 +1,27 @@
+// NutriTrack AI — Prisma schema
+// Foundation models only (Phase 0). Profile, FoodLog, LogItem, WaterLog,
+// FoodItem etc. are added in later phases, ported from reference/database_schema.sql.
+// Note (Firebase Auth decision): identity lives in Firebase; we store the
+// Firebase UID here instead of a password hash.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id          String   @id @default(uuid())
+  firebaseUid String   @unique
+  email       String   @unique
+  fullName    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  lastLoginAt DateTime?
+  isActive    Boolean  @default(true)
+
+  @@map("users")
+}
