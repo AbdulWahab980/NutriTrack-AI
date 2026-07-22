@@ -97,10 +97,29 @@ model User {
   lastLoginAt    DateTime? @map("last_login_at")
   isActive       Boolean   @default(true) @map("is_active")
 
-  profile   Profile?
-  dailyLogs DailyLog[]
+  profile        Profile?
+  dailyLogs      DailyLog[]
+  hostelMessItems HostelMessItem[]
 
   @@map("users")
+}
+
+/// Saved recurring mess meals, so hostel users can log and get suggestions
+/// without retyping the menu every day (spec §3.5).
+model HostelMessItem {
+  id     String @id @default(uuid())
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  mealType MealType @map("meal_type")
+  /// 0 = Sunday .. 6 = Saturday. Null means "any day".
+  dayOfWeek   Int?   @map("day_of_week")
+  description String
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("hostel_mess_items")
 }
 
 /// Local cache of nutrition lookups plus the custom desi-food dataset.
@@ -180,6 +199,10 @@ model MealEntry {
   proteinG     Float @map("protein_g")
   carbsG       Float @map("carbs_g")
   fatG         Float @map("fat_g")
+
+  /// Approximate cost at time of logging, from the food item's reference
+  /// price. Snapshotted so the weekly budget view stays stable if prices change.
+  estimatedCostPkr Float? @map("estimated_cost_pkr")
 
   extractionConfidence ExtractionConfidence? @map("extraction_confidence")
   /// True when no nutrition source matched; totals exclude these until resolved.

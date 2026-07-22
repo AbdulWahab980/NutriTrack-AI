@@ -3,7 +3,14 @@ import { NextResponse, type NextRequest } from "next/server";
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/lib/env";
 
 /** Routes that require a signed-in user. */
-const PROTECTED_PREFIXES = ["/today", "/log", "/trends", "/profile", "/onboarding"];
+const PROTECTED_PREFIXES = [
+  "/today",
+  "/log",
+  "/trends",
+  "/profile",
+  "/onboarding",
+  "/hostel",
+];
 
 /**
  * Refreshes the Supabase auth token on every request and gates protected

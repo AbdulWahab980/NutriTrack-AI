@@ -23,6 +23,8 @@ export type NutritionResult = {
   carbsG: number;
   fatG: number;
   fiberG: number | null;
+  /// Reference price for the logged amount, used by hostel budget tracking.
+  approxCostPkr: number | null;
   source: FoodSource | null;
   foodItemId: string | null;
   matched: boolean;
@@ -46,6 +48,7 @@ function unmatched(name: string, quantity: number, unit: string): NutritionResul
     carbsG: 0,
     fatG: 0,
     fiberG: null,
+    approxCostPkr: null,
     source: null,
     foodItemId: null,
     matched: false,
@@ -103,6 +106,7 @@ async function lookupLocal(
       carbsG: row.carbsG,
       fatG: row.fatG,
       fiberG: row.fiberG,
+      approxCostPkr: row.approxCostPkr,
       source: row.source,
       foodItemId: row.id,
     },
@@ -116,7 +120,7 @@ async function findByWordOverlap(normalized: string) {
   const candidates = await prisma.foodItem.findMany({
     select: { id: true, name: true, normalizedName: true, defaultQuantity: true,
       caloriesKcal: true, proteinG: true, carbsG: true, fatG: true, fiberG: true,
-      source: true, defaultUnit: true },
+      approxCostPkr: true, source: true, defaultUnit: true },
   });
   // Prefer the longest stored name that appears in the phrase — "daal chawal"
   // should win over "daal" for the phrase "daal chawal".
@@ -165,6 +169,7 @@ async function queryNutritionix(
       carbsG: food.nf_total_carbohydrate ?? 0,
       fatG: food.nf_total_fat ?? 0,
       fiberG: food.nf_dietary_fiber ?? null,
+      approxCostPkr: null, // external sources carry no local price
       source: "NUTRITIONIX",
       foodItemId: null,
       matched: true,
@@ -209,6 +214,7 @@ async function queryUsda(
       carbsG: n["Carbohydrate, by difference"] ?? 0,
       fatG: n["Total lipid (fat)"] ?? 0,
       fiberG: n["Fiber, total dietary"] ?? null,
+      approxCostPkr: null,
       source: "USDA",
       foodItemId: null,
       matched: true,
@@ -310,6 +316,7 @@ function scale(
     carbsG: number;
     fatG: number;
     fiberG: number | null;
+    approxCostPkr: number | null;
     source: FoodSource;
     foodItemId: string;
   },
@@ -328,6 +335,7 @@ function scale(
     carbsG: r(base.carbsG),
     fatG: r(base.fatG),
     fiberG: base.fiberG === null ? null : r(base.fiberG),
+    approxCostPkr: base.approxCostPkr === null ? null : r(base.approxCostPkr),
     source: base.source,
     foodItemId: base.foodItemId,
     matched: true,

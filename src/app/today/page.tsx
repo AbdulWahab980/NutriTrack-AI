@@ -119,6 +119,25 @@ export default async function TodayPage() {
         <AdvicePanel canGenerate={hasData} />
       </div>
 
+      {profile.livingSituation === "HOSTEL" && (
+        <Link
+          href="/hostel"
+          className="mt-4 flex items-center justify-between rounded-xl bg-surface p-5"
+        >
+          <span>
+            <span className="block text-sm font-semibold text-primary">
+              Hostel mode
+            </span>
+            <span className="mt-0.5 block text-xs text-muted">
+              Mess menu, budget-aware add-ons, and weekly spend
+            </span>
+          </span>
+          <span aria-hidden className="text-primary">
+            &rarr;
+          </span>
+        </Link>
+      )}
+
       {/* --- logged entries --- */}
       <div className="mt-6">
         <div className="flex items-center justify-between">

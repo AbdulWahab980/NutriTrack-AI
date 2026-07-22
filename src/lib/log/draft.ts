@@ -22,6 +22,8 @@ export type DraftItem = {
   fatG: number;
   matched: boolean;
   foodItemId: string | null;
+  /// Reference cost for this amount; null when unknown.
+  approxCostPkr: number | null;
 };
 
 export type DraftMeal = {
@@ -39,6 +41,8 @@ export type LogDraft = {
     carbsG: number;
     fatG: number;
   };
+  /** Sum of known item costs; excludes items with no reference price. */
+  estimatedCostPkr: number;
   /** Items we could not price nutritionally — surfaced, never silently zeroed. */
   unmatchedNames: string[];
 };
@@ -66,6 +70,7 @@ export async function buildDraft(message: string): Promise<LogDraft> {
             fatG: round(n.fatG),
             matched: n.matched,
             foodItemId: n.foodItemId,
+            approxCostPkr: n.approxCostPkr === null ? null : round(n.approxCostPkr),
           };
         }),
       ),
@@ -94,6 +99,9 @@ export async function buildDraft(message: string): Promise<LogDraft> {
       carbsG: round(totals.carbsG),
       fatG: round(totals.fatG),
     },
+    estimatedCostPkr: round(
+      allItems.reduce((sum, i) => sum + (i.approxCostPkr ?? 0), 0),
+    ),
     unmatchedNames: allItems.filter((i) => !i.matched).map((i) => i.rawName),
   };
 }

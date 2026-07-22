@@ -57,6 +57,7 @@ export async function saveDraft(
       proteinG: item.proteinG,
       carbsG: item.carbsG,
       fatG: item.fatG,
+      estimatedCostPkr: item.approxCostPkr,
       extractionConfidence: CONFIDENCE_MAP[item.confidence],
       needsManualEntry: !item.matched,
     })),
