@@ -8,7 +8,11 @@
     "start": "next start",
     "lint": "eslint",
     "check:targets": "tsx scripts/check-targets.ts",
-    "check:db": "tsx scripts/check-db.ts"
+    "check:db": "tsx scripts/check-db.ts",
+    "seed:foods": "tsx scripts/seed-foods.ts",
+    "check:extract": "tsx scripts/check-extract.ts",
+    "check:nutrition": "tsx scripts/check-nutrition.ts",
+    "check:logging": "tsx scripts/check-logging.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.0",

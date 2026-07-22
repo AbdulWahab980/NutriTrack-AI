@@ -1,6 +1,7 @@
 // NutriTrack AI — Prisma schema
-// Phase 0-1 models. FoodItem, DailyLog, MealEntry, WaterLog etc. are added in
-// later phases, ported from reference/database_schema.sql.
+// Phase 0-2 models, ported from reference/database_schema.sql. AiFeedback,
+// UserStreak, HostelMessItem, ReminderSettings and DataRequest arrive with
+// their own phases.
 // Note (Supabase Auth decision): identity lives in Supabase's `auth.users`
 // table; we store its UUID here instead of a password hash. Prisma only owns
 // the `public` schema, so this is a logical reference, not a DB-level FK.
@@ -60,6 +61,32 @@ enum KitchenAccess {
   @@map("kitchen_access_enum")
 }
 
+enum MealType {
+  BREAKFAST @map("breakfast")
+  LUNCH     @map("lunch")
+  DINNER    @map("dinner")
+  SNACK     @map("snack")
+
+  @@map("meal_type_enum")
+}
+
+enum FoodSource {
+  NUTRITIONIX @map("nutritionix")
+  USDA        @map("usda")
+  CUSTOM_DESI @map("custom_desi")
+  MANUAL      @map("manual")
+
+  @@map("food_source_enum")
+}
+
+enum ExtractionConfidence {
+  HIGH   @map("high")
+  MEDIUM @map("medium")
+  LOW    @map("low")
+
+  @@map("extraction_confidence_enum")
+}
+
 model User {
   id             String    @id @default(uuid())
   supabaseUserId String    @unique @map("supabase_user_id") // UUID from Supabase auth.users
@@ -70,9 +97,106 @@ model User {
   lastLoginAt    DateTime? @map("last_login_at")
   isActive       Boolean   @default(true) @map("is_active")
 
-  profile Profile?
+  profile   Profile?
+  dailyLogs DailyLog[]
 
   @@map("users")
+}
+
+/// Local cache of nutrition lookups plus the custom desi-food dataset.
+/// Always consulted before any external API (cost, latency, reliability).
+model FoodItem {
+  id              String     @id @default(uuid())
+  name            String
+  normalizedName  String     @map("normalized_name")
+  source          FoodSource
+  defaultUnit     String     @map("default_unit") // 'piece','bowl','cup','g','ml'
+  defaultQuantity Float      @default(1) @map("default_quantity")
+
+  caloriesKcal Float  @map("calories_kcal")
+  proteinG     Float  @map("protein_g")
+  carbsG       Float  @map("carbs_g")
+  fatG         Float  @map("fat_g")
+  fiberG       Float? @map("fiber_g")
+  /// Used for hostel budget-aware suggestions.
+  approxCostPkr Float? @map("approx_cost_pkr")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  mealEntries MealEntry[]
+
+  @@unique([normalizedName, defaultUnit])
+  @@index([normalizedName])
+  @@map("food_items")
+}
+
+/// One row per user per day — the aggregation anchor for totals and trends.
+model DailyLog {
+  id      String   @id @default(uuid())
+  userId  String   @map("user_id")
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  logDate DateTime @map("log_date") @db.Date
+
+  totalCalories Float @default(0) @map("total_calories")
+  totalProteinG Float @default(0) @map("total_protein_g")
+  totalCarbsG   Float @default(0) @map("total_carbs_g")
+  totalFatG     Float @default(0) @map("total_fat_g")
+  totalWaterMl  Int   @default(0) @map("total_water_ml")
+
+  /// Entries are editable same-day only; a closed day is immutable (spec §4).
+  isFinalized Boolean @default(false) @map("is_finalized")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  mealEntries  MealEntry[]
+  waterEntries WaterEntry[]
+
+  @@unique([userId, logDate])
+  @@index([userId, logDate(sort: Desc)])
+  @@map("daily_logs")
+}
+
+model MealEntry {
+  id         String   @id @default(uuid())
+  dailyLogId String   @map("daily_log_id")
+  dailyLog   DailyLog @relation(fields: [dailyLogId], references: [id], onDelete: Cascade)
+
+  /// Null when nothing matched — never fabricate a food match.
+  foodItemId String?   @map("food_item_id")
+  foodItem   FoodItem? @relation(fields: [foodItemId], references: [id])
+
+  mealType MealType @map("meal_type")
+  /// Original user phrase, kept for auditing extraction quality.
+  rawInputText String @map("raw_input_text")
+  quantity     Float
+  unit         String
+
+  caloriesKcal Float @map("calories_kcal")
+  proteinG     Float @map("protein_g")
+  carbsG       Float @map("carbs_g")
+  fatG         Float @map("fat_g")
+
+  extractionConfidence ExtractionConfidence? @map("extraction_confidence")
+  /// True when no nutrition source matched; totals exclude these until resolved.
+  needsManualEntry Boolean @default(false) @map("needs_manual_entry")
+
+  loggedAt DateTime @default(now()) @map("logged_at")
+
+  @@index([dailyLogId])
+  @@map("meal_entries")
+}
+
+model WaterEntry {
+  id         String   @id @default(uuid())
+  dailyLogId String   @map("daily_log_id")
+  dailyLog   DailyLog @relation(fields: [dailyLogId], references: [id], onDelete: Cascade)
+
+  amountMl Int      @map("amount_ml")
+  loggedAt DateTime @default(now()) @map("logged_at")
+
+  @@index([dailyLogId])
+  @@map("water_entries")
 }
 
 model Profile {
