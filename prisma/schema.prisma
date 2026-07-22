@@ -97,11 +97,29 @@ model User {
   lastLoginAt    DateTime? @map("last_login_at")
   isActive       Boolean   @default(true) @map("is_active")
 
-  profile        Profile?
-  dailyLogs      DailyLog[]
+  profile         Profile?
+  dailyLogs       DailyLog[]
   hostelMessItems HostelMessItem[]
+  weightEntries   WeightEntry[]
 
   @@map("users")
+}
+
+/// Optional weight history for trend graphs (spec §3.6). One entry per day;
+/// re-logging the same day overwrites rather than duplicating.
+model WeightEntry {
+  id     String @id @default(uuid())
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  logDate  DateTime @map("log_date") @db.Date
+  weightKg Float    @map("weight_kg")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([userId, logDate])
+  @@index([userId, logDate(sort: Desc)])
+  @@map("weight_entries")
 }
 
 /// Saved recurring mess meals, so hostel users can log and get suggestions
