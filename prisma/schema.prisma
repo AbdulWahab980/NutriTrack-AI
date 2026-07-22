@@ -97,12 +97,51 @@ model User {
   lastLoginAt    DateTime? @map("last_login_at")
   isActive       Boolean   @default(true) @map("is_active")
 
-  profile         Profile?
-  dailyLogs       DailyLog[]
-  hostelMessItems HostelMessItem[]
-  weightEntries   WeightEntry[]
+  profile          Profile?
+  dailyLogs        DailyLog[]
+  hostelMessItems  HostelMessItem[]
+  weightEntries    WeightEntry[]
+  reminderSettings ReminderSettings?
+  dataRequests     DataRequest[]
 
   @@map("users")
+}
+
+model ReminderSettings {
+  id     String @id @default(uuid())
+  userId String @unique @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  waterRemindersEnabled   Boolean @default(true) @map("water_reminders_enabled")
+  waterReminderIntervalMin Int    @default(120) @map("water_reminder_interval_min")
+  mealRemindersEnabled    Boolean @default(true) @map("meal_reminders_enabled")
+  /// Hour (0-23, user's local time) after which an unlogged day is nudged.
+  mealReminderHour        Int     @default(20) @map("meal_reminder_hour")
+  weeklySummaryEnabled    Boolean @default(true) @map("weekly_summary_enabled")
+
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("reminder_settings")
+}
+
+enum DataRequestType {
+  EXPORT @map("export")
+  DELETE @map("delete")
+
+  @@map("data_request_type_enum")
+}
+
+/// Audit trail for privacy requests (spec §4).
+model DataRequest {
+  id     String @id @default(uuid())
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  requestType DataRequestType @map("request_type")
+  requestedAt DateTime        @default(now()) @map("requested_at")
+
+  @@index([userId])
+  @@map("data_requests")
 }
 
 /// Optional weight history for trend graphs (spec §3.6). One entry per day;

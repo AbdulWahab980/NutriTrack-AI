@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ProfileForm } from "@/components/ProfileForm";
 import { saveProfile } from "@/app/onboarding/actions";
 import { requireOnboardedUser } from "@/lib/user";
@@ -64,6 +65,21 @@ export default async function ProfilePage() {
           />
         </div>
       </div>
+
+      <Link
+        href="/settings"
+        className="flex items-center justify-between rounded-xl border border-border p-5"
+      >
+        <span>
+          <span className="block text-sm font-semibold">Settings</span>
+          <span className="mt-0.5 block text-xs text-muted">
+            Reminders, data export, and account deletion
+          </span>
+        </span>
+        <span aria-hidden className="text-muted">
+          &rarr;
+        </span>
+      </Link>
 
       <form action={logout}>
         <button

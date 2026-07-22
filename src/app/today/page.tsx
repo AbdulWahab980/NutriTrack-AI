@@ -7,6 +7,7 @@ import { ProgressRing } from "@/components/ProgressRing";
 import { TimezoneSync } from "@/components/TimezoneSync";
 import { AdvicePanel } from "@/components/AdvicePanel";
 import { removeEntry } from "@/app/log/actions";
+import { computeNudges } from "@/lib/reminders";
 
 export const metadata = { title: "Today · NutriTrack AI" };
 
@@ -16,6 +17,10 @@ export default async function TodayPage() {
   const { user, profile } = await requireOnboardedUser();
   const tz = await getTimeZone();
   const { iso, date } = await getToday();
+
+  const reminderSettings = await prisma.reminderSettings.findUnique({
+    where: { userId: user.id },
+  });
 
   const dailyLog = await prisma.dailyLog.findUnique({
     where: { userId_logDate: { userId: user.id, logDate: date } },
@@ -34,6 +39,24 @@ export default async function TodayPage() {
   };
   const hasData = (dailyLog?.mealEntries.length ?? 0) > 0 || totals.waterMl > 0;
   const gaps = hasData ? computeGaps(totals, profile) : [];
+
+  // Local hour in the viewer's timezone, for reminder pacing.
+  const localHour = Number(
+    new Intl.DateTimeFormat("en-GB", { hour: "2-digit", hour12: false, timeZone: tz })
+      .format(new Date())
+      .slice(0, 2),
+  );
+  const nudges = computeNudges({
+    localHour,
+    waterMl: totals.waterMl,
+    waterTargetMl: profile.targetWaterMl,
+    hasLoggedFood: (dailyLog?.mealEntries.length ?? 0) > 0,
+    settings: {
+      waterRemindersEnabled: reminderSettings?.waterRemindersEnabled ?? true,
+      mealRemindersEnabled: reminderSettings?.mealRemindersEnabled ?? true,
+      mealReminderHour: reminderSettings?.mealReminderHour ?? 20,
+    },
+  });
 
   const entriesByMeal = MEAL_ORDER.map((meal) => ({
     meal,
@@ -72,6 +95,19 @@ export default async function TodayPage() {
           unit="ml"
         />
       </div>
+
+      {nudges.length > 0 && (
+        <ul className="mt-3 space-y-2">
+          {nudges.map((n) => (
+            <li
+              key={n.kind}
+              className="rounded-xl border border-border bg-surface px-4 py-3 text-sm text-muted"
+            >
+              {n.text}
+            </li>
+          ))}
+        </ul>
+      )}
 
       {/* --- macro bars --- */}
       <div className="mt-3 grid grid-cols-2 gap-3">

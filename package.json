@@ -17,7 +17,8 @@
     "check:safety": "tsx scripts/check-safety.ts",
     "check:advice": "tsx scripts/check-advice.ts",
     "check:hostel": "tsx scripts/check-hostel.ts",
-    "check:trends": "tsx scripts/check-trends.ts"
+    "check:trends": "tsx scripts/check-trends.ts",
+    "check:privacy": "tsx scripts/check-privacy.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.0",

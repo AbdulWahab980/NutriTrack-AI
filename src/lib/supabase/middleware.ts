@@ -10,6 +10,8 @@ const PROTECTED_PREFIXES = [
   "/profile",
   "/onboarding",
   "/hostel",
+  "/settings",
+  "/api/export",
 ];
 
 /**
