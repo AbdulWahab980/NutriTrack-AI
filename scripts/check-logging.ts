@@ -65,6 +65,11 @@ async function main() {
     "each entry keeps the original message for auditing",
   );
   ok(
+    entries.every((e) => e.foodName && e.foodName.length > 0),
+    "each entry stores a displayable food name",
+  );
+  console.log("entry names:", entries.map((e) => `${e.quantity} ${e.unit} ${e.foodName}`).join(" | "));
+  ok(
     entries.some((e) => e.mealType === "BREAKFAST") &&
       entries.some((e) => e.mealType === "LUNCH"),
     "meal types should be mapped to enum values",

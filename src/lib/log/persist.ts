@@ -49,6 +49,7 @@ export async function saveDraft(
       dailyLogId: dailyLog.id,
       foodItemId: item.foodItemId,
       mealType: MEAL_TYPE_MAP[meal.mealType],
+      foodName: item.name,
       rawInputText: rawMessage,
       quantity: item.quantity,
       unit: item.unit,

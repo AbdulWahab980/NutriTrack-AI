@@ -167,7 +167,10 @@ model MealEntry {
   foodItem   FoodItem? @relation(fields: [foodItemId], references: [id])
 
   mealType MealType @map("meal_type")
-  /// Original user phrase, kept for auditing extraction quality.
+  /// Resolved food name, shown in the UI. Kept on the entry so a row still
+  /// displays correctly when nothing matched (foodItemId is null).
+  foodName String @map("food_name")
+  /// The full original message, kept for auditing extraction quality.
   rawInputText String @map("raw_input_text")
   quantity     Float
   unit         String
