@@ -8,6 +8,7 @@ import { getToday } from "@/lib/date";
 import { computeGaps } from "@/lib/insights";
 import { generateHostelSuggestions } from "@/lib/hostel/suggest";
 import { getSpendForDate } from "@/lib/hostel/budget";
+import { consumeLlmQuota, RateLimitError } from "@/lib/rate-limit";
 
 export type HostelState = {
   error?: string;
@@ -40,6 +41,7 @@ export async function suggestAddOns(
   };
 
   try {
+    await consumeLlmQuota(user.id, "HOSTEL", date);
     const result = await generateHostelSuggestions({
       budgetPkr: profile.dailyFoodBudgetPkr,
       spentTodayPkr: await getSpendForDate(user.id, date),
@@ -52,6 +54,7 @@ export async function suggestAddOns(
     if (result.kind === "support") return { support: true };
     return { text: result.text };
   } catch (e) {
+    if (e instanceof RateLimitError) return { error: e.message };
     console.error("[hostel] suggestion failed:", e);
     return { error: "Couldn't generate suggestions right now. Please try again." };
   }

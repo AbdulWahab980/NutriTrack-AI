@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { requireOnboardedUser } from "@/lib/user";
 import { getToday } from "@/lib/date";
 import { generateAdvice } from "@/lib/llm/advice";
+import { consumeLlmQuota, RateLimitError } from "@/lib/rate-limit";
 
 export type AdviceState = {
   error?: string;
@@ -33,6 +34,7 @@ export async function requestAdvice(
   const messages = [...new Set(dailyLog.mealEntries.map((e) => e.rawInputText))];
 
   try {
+    await consumeLlmQuota(user.id, "ADVICE", date);
     const result = await generateAdvice(
       {
         age: profile.age,
@@ -77,6 +79,7 @@ export async function requestAdvice(
     revalidatePath("/today");
     return { text: result.text, feedbackId: saved.id };
   } catch (e) {
+    if (e instanceof RateLimitError) return { error: e.message };
     console.error("[advice] generation failed:", e);
     return { error: "Couldn't generate guidance right now. Please try again." };
   }

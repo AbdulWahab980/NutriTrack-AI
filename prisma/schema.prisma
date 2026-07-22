@@ -103,6 +103,7 @@ model User {
   weightEntries    WeightEntry[]
   reminderSettings ReminderSettings?
   dataRequests     DataRequest[]
+  llmUsage         LlmUsage[]
 
   @@map("users")
 }
@@ -122,6 +123,32 @@ model ReminderSettings {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("reminder_settings")
+}
+
+enum LlmCallKind {
+  EXTRACTION @map("extraction")
+  ADVICE     @map("advice")
+  HOSTEL     @map("hostel")
+
+  @@map("llm_call_kind_enum")
+}
+
+/// Durable per-user, per-day LLM call counter. In-memory limits reset on
+/// deploy and are per-instance; this is what actually caps spend.
+model LlmUsage {
+  id     String @id @default(uuid())
+  userId String @map("user_id")
+  // Related so usage rows are removed with the account (spec §4 delete).
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  usageDate DateTime    @map("usage_date") @db.Date
+  kind      LlmCallKind
+  count     Int         @default(0)
+
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId, usageDate, kind])
+  @@map("llm_usage")
 }
 
 enum DataRequestType {

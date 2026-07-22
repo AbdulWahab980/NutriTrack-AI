@@ -7,6 +7,8 @@ import { parseLocalDate, saveDraft, deleteMealEntry } from "@/lib/log/persist";
 import { requireOnboardedUser } from "@/lib/user";
 import { ExtractionError } from "@/lib/llm/extract";
 import { screenForDisorderedEating } from "@/lib/safety/screen";
+import { consumeLlmQuota, RateLimitError } from "@/lib/rate-limit";
+import { getToday } from "@/lib/date";
 
 export type LogState = {
   error?: string;
@@ -24,7 +26,7 @@ export async function analyzeMessage(
   _prev: LogState,
   formData: FormData,
 ): Promise<LogState> {
-  await requireOnboardedUser();
+  const { user } = await requireOnboardedUser();
 
   const message = String(formData.get("message") ?? "").trim();
   if (message.length < 2) {
@@ -42,6 +44,8 @@ export async function analyzeMessage(
   }
 
   try {
+    // Counted before the call so a failing request cannot bypass the cap.
+    await consumeLlmQuota(user.id, "EXTRACTION", (await getToday()).date);
     const draft = await buildDraft(message);
     if (draft.meals.every((m) => m.items.length === 0) && draft.waterMl === 0) {
       return {
@@ -51,6 +55,9 @@ export async function analyzeMessage(
     }
     return { draft, message };
   } catch (e) {
+    if (e instanceof RateLimitError) {
+      return { error: e.message, message };
+    }
     if (e instanceof ExtractionError) {
       return { error: e.message, message };
     }
