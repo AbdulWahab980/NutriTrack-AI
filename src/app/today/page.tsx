@@ -5,6 +5,7 @@ import { getToday, getTimeZone, formatFriendlyDate } from "@/lib/date";
 import { computeGaps, percentOf } from "@/lib/insights";
 import { ProgressRing } from "@/components/ProgressRing";
 import { TimezoneSync } from "@/components/TimezoneSync";
+import { AdvicePanel } from "@/components/AdvicePanel";
 import { removeEntry } from "@/app/log/actions";
 
 export const metadata = { title: "Today · NutriTrack AI" };
@@ -111,11 +112,12 @@ export default async function TodayPage() {
               </li>
             ))}
           </ul>
-          <p className="mt-3 text-xs text-muted">
-            Specific suggestions to close these gaps arrive in Phase 5.
-          </p>
         </div>
       )}
+
+      <div className="mt-4">
+        <AdvicePanel canGenerate={hasData} />
+      </div>
 
       {/* --- logged entries --- */}
       <div className="mt-6">

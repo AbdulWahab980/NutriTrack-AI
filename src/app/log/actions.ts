@@ -6,12 +6,15 @@ import { buildDraft, type LogDraft } from "@/lib/log/draft";
 import { parseLocalDate, saveDraft, deleteMealEntry } from "@/lib/log/persist";
 import { requireOnboardedUser } from "@/lib/user";
 import { ExtractionError } from "@/lib/llm/extract";
+import { screenForDisorderedEating } from "@/lib/safety/screen";
 
 export type LogState = {
   error?: string;
   draft?: LogDraft;
   message?: string;
   saved?: { calories: number; waterMl: number };
+  /** Safety screen tripped — show support instead of any nutrition guidance. */
+  support?: boolean;
 };
 
 const localDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date.");
@@ -29,6 +32,13 @@ export async function analyzeMessage(
   }
   if (message.length > 2000) {
     return { error: "That's a bit long — try splitting it into two messages." };
+  }
+
+  // Safety screen runs before anything else: if it trips we show support and
+  // stop nutrition coaching for this turn (spec §3.8) — no extraction, no
+  // calorie numbers, no API call.
+  if (screenForDisorderedEating(message).flagged) {
+    return { support: true };
   }
 
   try {

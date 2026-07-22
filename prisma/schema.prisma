@@ -151,6 +151,7 @@ model DailyLog {
 
   mealEntries  MealEntry[]
   waterEntries WaterEntry[]
+  aiFeedback   AiFeedback[]
 
   @@unique([userId, logDate])
   @@index([userId, logDate(sort: Desc)])
@@ -188,6 +189,26 @@ model MealEntry {
 
   @@index([dailyLogId])
   @@map("meal_entries")
+}
+
+/// Generated advice per day, kept for history and the thumbs up/down loop.
+model AiFeedback {
+  id         String   @id @default(uuid())
+  dailyLogId String   @map("daily_log_id")
+  dailyLog   DailyLog @relation(fields: [dailyLogId], references: [id], onDelete: Cascade)
+
+  feedbackText String @map("feedback_text")
+  /// Structured suggestions shown alongside the prose.
+  suggestedActions Json? @map("suggested_actions")
+  /// 1 = helpful, -1 = not helpful, null = no rating yet.
+  userRating Int? @map("user_rating")
+  /// True when the safety screen suppressed nutrition advice for this turn.
+  flaggedDisorderedEating Boolean @default(false) @map("flagged_disordered_eating")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([dailyLogId])
+  @@map("ai_feedback")
 }
 
 model WaterEntry {

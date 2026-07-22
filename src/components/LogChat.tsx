@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { analyzeMessage, confirmDraft, type LogState } from "@/app/log/actions";
-import type { LogDraft } from "@/lib/log/draft";
+import { SupportCard } from "./SupportCard";
 
 const EXAMPLES = [
   "2 parathas and a cup of tea for breakfast",
@@ -30,6 +30,11 @@ export function LogChat() {
 
   const draft = analyzeState.draft;
   const justSaved = confirmState.saved;
+
+  // Safety screen tripped — nothing else renders this turn.
+  if (analyzeState.support) {
+    return <SupportCard />;
+  }
 
   if (justSaved) {
     return (
