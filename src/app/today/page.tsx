@@ -1,34 +1,36 @@
-import Link from "next/link";
 import { requireOnboardedUser } from "@/lib/user";
 import { prisma } from "@/lib/prisma";
-import { getToday, getTimeZone, formatFriendlyDate } from "@/lib/date";
-import { computeGaps, percentOf } from "@/lib/insights";
-import { ProgressRing } from "@/components/ProgressRing";
+import { getToday, getTimeZone } from "@/lib/date";
+import { computeGaps } from "@/lib/insights";
+import { getTrendSummary } from "@/lib/trends";
 import { TimezoneSync } from "@/components/TimezoneSync";
-import { AdvicePanel } from "@/components/AdvicePanel";
-import { removeEntry } from "@/app/log/actions";
-import { computeNudges } from "@/lib/reminders";
+import { StatCard } from "@/components/dashboard/StatCard";
+import { QuickActionCard } from "@/components/dashboard/QuickActionCard";
+import { MacroDonut } from "@/components/dashboard/MacroDonut";
+import { NutritionOverviewChart } from "@/components/dashboard/NutritionOverviewChart";
+import { AiInsightCard } from "@/components/dashboard/AiInsightCard";
+import { MealsList } from "@/components/dashboard/MealsList";
+import {
+  UtensilsIcon, DropIcon, AppleIcon, LeafIcon, ScanIcon, PlusIcon, ChatIcon,
+} from "@/components/icons";
 
-export const metadata = { title: "Today · NutriTrack AI" };
+export const metadata = { title: "Dashboard · NutriTrack AI" };
 
-const MEAL_ORDER = ["BREAKFAST", "LUNCH", "DINNER", "SNACK"] as const;
+const pct = (v: number, t: number) => (t > 0 ? Math.min(100, (v / t) * 100) : 0);
+const fmt = (n: number) => Math.round(n).toLocaleString("en-US");
 
-export default async function TodayPage() {
+export default async function DashboardPage() {
   const { user, profile } = await requireOnboardedUser();
   const tz = await getTimeZone();
-  const { iso, date } = await getToday();
+  const { date } = await getToday();
 
-  const reminderSettings = await prisma.reminderSettings.findUnique({
-    where: { userId: user.id },
-  });
-
-  const dailyLog = await prisma.dailyLog.findUnique({
-    where: { userId_logDate: { userId: user.id, logDate: date } },
-    include: {
-      mealEntries: { orderBy: { loggedAt: "asc" } },
-      waterEntries: { orderBy: { loggedAt: "asc" } },
-    },
-  });
+  const [dailyLog, week] = await Promise.all([
+    prisma.dailyLog.findUnique({
+      where: { userId_logDate: { userId: user.id, logDate: date } },
+      include: { mealEntries: { orderBy: { loggedAt: "desc" } } },
+    }),
+    getTrendSummary(user.id, date, 7, profile),
+  ]);
 
   const totals = {
     caloriesKcal: dailyLog?.totalCalories ?? 0,
@@ -38,217 +40,80 @@ export default async function TodayPage() {
     waterMl: dailyLog?.totalWaterMl ?? 0,
   };
   const hasData = (dailyLog?.mealEntries.length ?? 0) > 0 || totals.waterMl > 0;
+
+  const caloriesRemaining = Math.max(0, profile.targetCalories - totals.caloriesKcal);
   const gaps = hasData ? computeGaps(totals, profile) : [];
 
-  // Local hour in the viewer's timezone, for reminder pacing.
-  const localHour = Number(
-    new Intl.DateTimeFormat("en-GB", { hour: "2-digit", hour12: false, timeZone: tz })
-      .format(new Date())
-      .slice(0, 2),
-  );
-  const nudges = computeNudges({
-    localHour,
-    waterMl: totals.waterMl,
-    waterTargetMl: profile.targetWaterMl,
-    hasLoggedFood: (dailyLog?.mealEntries.length ?? 0) > 0,
-    settings: {
-      waterRemindersEnabled: reminderSettings?.waterRemindersEnabled ?? true,
-      mealRemindersEnabled: reminderSettings?.mealRemindersEnabled ?? true,
-      mealReminderHour: reminderSettings?.mealReminderHour ?? 20,
-    },
-  });
-
-  const entriesByMeal = MEAL_ORDER.map((meal) => ({
-    meal,
-    entries: (dailyLog?.mealEntries ?? []).filter((e) => e.mealType === meal),
-  })).filter((g) => g.entries.length > 0);
+  const insight = !hasData
+    ? "Log a meal and I'll show exactly where you stand against today's targets."
+    : gaps.length > 0
+      ? gaps[0].text
+      : "You're on track with your calorie, protein and water targets so far today.";
 
   return (
-    <section>
+    <div className="space-y-6">
       <TimezoneSync current={tz} />
 
-      <div className="flex items-baseline justify-between gap-3">
-        <h1 className="text-2xl font-semibold">
-          {user.fullName ? `Hi, ${user.fullName.split(" ")[0]}` : "Today"}
-        </h1>
-        <p className="text-xs text-muted">{formatFriendlyDate(iso)}</p>
-      </div>
-
-      {/* --- rings --- */}
-      <div className="mt-6 grid grid-cols-3 gap-2 rounded-xl border border-border p-5">
-        <ProgressRing
-          value={totals.caloriesKcal}
-          target={profile.targetCalories}
-          label="Calories"
-          unit="kcal"
+      {/* --- stat cards --- */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          label="Calories Remaining"
+          value={fmt(caloriesRemaining)} unit="kcal"
+          sub={`of ${fmt(profile.targetCalories)} kcal`}
+          percent={pct(totals.caloriesKcal, profile.targetCalories)}
+          over={totals.caloriesKcal > profile.targetCalories}
+          icon={<UtensilsIcon className="h-5 w-5" />}
         />
-        <ProgressRing
-          value={totals.proteinG}
-          target={profile.targetProteinG}
+        <StatCard
           label="Protein"
-          unit="g"
+          value={fmt(totals.proteinG)} unit="g"
+          sub={`of ${fmt(profile.targetProteinG)} g`}
+          percent={pct(totals.proteinG, profile.targetProteinG)}
+          icon={<LeafIcon className="h-5 w-5" />}
         />
-        <ProgressRing
-          value={totals.waterMl}
-          target={profile.targetWaterMl}
+        <StatCard
           label="Water"
-          unit="ml"
+          value={(totals.waterMl / 1000).toFixed(1)} unit="L"
+          sub={`of ${(profile.targetWaterMl / 1000).toFixed(1)} L`}
+          percent={pct(totals.waterMl, profile.targetWaterMl)}
+          icon={<DropIcon className="h-5 w-5" />}
+        />
+        <StatCard
+          label="Carbs"
+          value={fmt(totals.carbsG)} unit="g"
+          sub={`of ${fmt(profile.targetCarbsG)} g`}
+          percent={pct(totals.carbsG, profile.targetCarbsG)}
+          icon={<AppleIcon className="h-5 w-5" />}
         />
       </div>
 
-      {nudges.length > 0 && (
-        <ul className="mt-3 space-y-2">
-          {nudges.map((n) => (
-            <li
-              key={n.kind}
-              className="rounded-xl border border-border bg-surface px-4 py-3 text-sm text-muted"
-            >
-              {n.text}
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {/* --- macro bars --- */}
-      <div className="mt-3 grid grid-cols-2 gap-3">
-        {(
-          [
-            ["Carbs", totals.carbsG, profile.targetCarbsG, "g"],
-            ["Fat", totals.fatG, profile.targetFatG, "g"],
-          ] as const
-        ).map(([label, value, target, unit]) => (
-          <div key={label} className="rounded-xl border border-border p-4">
-            <div className="flex items-baseline justify-between">
-              <span className="text-xs text-muted">{label}</span>
-              <span className="text-sm font-semibold">
-                {Math.round(value)}
-                <span className="text-xs font-normal text-muted">
-                  {" "}/ {Math.round(target)}{unit}
-                </span>
-              </span>
-            </div>
-            <div className="mt-2 h-1.5 w-full rounded-full bg-track">
-              <div
-                className="h-1.5 rounded-full bg-primary"
-                style={{ width: `${percentOf(value, target)}%` }}
-              />
-            </div>
-          </div>
-        ))}
+      {/* --- quick actions --- */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <QuickActionCard href="/log" title="Scan Meal" subtitle="Log your meal" icon={<ScanIcon className="h-5 w-5" />} />
+        <QuickActionCard href="/log" title="Add Food" subtitle="Log your food manually" icon={<PlusIcon className="h-5 w-5" />} />
+        <QuickActionCard href="/coach" title="Ask AI Coach" subtitle="Get personalized advice" icon={<ChatIcon className="h-5 w-5" />} />
+        <QuickActionCard href="/log" title="Log Water" subtitle="Track your water intake" icon={<DropIcon className="h-5 w-5" />} />
       </div>
 
-      {/* --- gaps --- */}
-      {gaps.length > 0 && (
-        <div className="mt-6 rounded-xl bg-surface p-5">
-          <h2 className="text-sm font-semibold">Where you stand</h2>
-          <ul className="mt-2 space-y-1">
-            {gaps.map((g) => (
-              <li key={g.label} className="text-sm text-muted">
-                {g.text}
-              </li>
-            ))}
-          </ul>
+      {/* --- charts --- */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="rounded-2xl border border-border bg-card p-5 lg:col-span-2">
+          <NutritionOverviewChart days={week.days} />
         </div>
-      )}
-
-      <div className="mt-4">
-        <AdvicePanel canGenerate={hasData} />
-      </div>
-
-      {profile.livingSituation === "HOSTEL" && (
-        <Link
-          href="/hostel"
-          className="mt-4 flex items-center justify-between rounded-xl bg-surface p-5"
-        >
-          <span>
-            <span className="block text-sm font-semibold text-primary">
-              Hostel mode
-            </span>
-            <span className="mt-0.5 block text-xs text-muted">
-              Mess menu, budget-aware add-ons, and weekly spend
-            </span>
-          </span>
-          <span aria-hidden className="text-primary">
-            &rarr;
-          </span>
-        </Link>
-      )}
-
-      {/* --- logged entries --- */}
-      <div className="mt-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold">Logged today</h2>
-          <Link href="/log" className="text-sm font-medium text-primary">
-            + Add
-          </Link>
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <h2 className="text-base font-semibold">Macronutrient Balance</h2>
+          <p className="text-xs text-muted">Today</p>
+          <div className="mt-6">
+            <MacroDonut proteinG={totals.proteinG} carbsG={totals.carbsG} fatG={totals.fatG} />
+          </div>
         </div>
-
-        {!hasData ? (
-          <div className="mt-3 rounded-xl border border-dashed border-border p-6 text-center">
-            <p className="text-sm text-muted">Nothing logged yet today.</p>
-            <Link
-              href="/log"
-              className="mt-3 inline-block rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
-            >
-              Log your first meal
-            </Link>
-          </div>
-        ) : (
-          <div className="mt-3 space-y-4">
-            {entriesByMeal.map(({ meal, entries }) => (
-              <div key={meal} className="rounded-xl border border-border p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-                  {meal.toLowerCase()}
-                </p>
-                <ul className="mt-2 divide-y divide-border">
-                  {entries.map((e) => (
-                    <li
-                      key={e.id}
-                      className="flex items-center justify-between gap-3 py-2 text-sm"
-                    >
-                      <span className="min-w-0">
-                        <span className="block truncate">
-                          {e.quantity} {e.unit}{" "}
-                          <span className="font-medium">{e.foodName}</span>
-                        </span>
-                        {e.needsManualEntry && (
-                          <span className="text-xs text-warning">
-                            no nutrition data — excluded from totals
-                          </span>
-                        )}
-                      </span>
-                      <span className="flex shrink-0 items-center gap-3">
-                        <span className="font-medium">
-                          {e.needsManualEntry ? "—" : `${Math.round(e.caloriesKcal)} kcal`}
-                        </span>
-                        <form action={removeEntry}>
-                          <input type="hidden" name="entryId" value={e.id} />
-                          <button
-                            type="submit"
-                            aria-label="Remove entry"
-                            className="text-xs text-muted hover:text-warning"
-                          >
-                            Remove
-                          </button>
-                        </form>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-
-            {totals.waterMl > 0 && (
-              <div className="rounded-xl border border-border p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-                  water
-                </p>
-                <p className="mt-1.5 text-sm">{totals.waterMl} ml total</p>
-              </div>
-            )}
-          </div>
-        )}
       </div>
-    </section>
+
+      {/* --- insight + meals --- */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <AiInsightCard text={insight} />
+        <MealsList entries={dailyLog?.mealEntries ?? []} timeZone={tz} />
+      </div>
+    </div>
   );
 }

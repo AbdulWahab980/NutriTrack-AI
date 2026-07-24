@@ -23,6 +23,23 @@ export async function requireAppUser() {
   });
 }
 
+/**
+ * Best-effort current user for shell chrome — never redirects, so it is safe
+ * to call from the root layout (which also renders on /login). Returns null
+ * when signed out or not yet synced to our users table.
+ */
+export async function getOptionalUserWithProfile() {
+  const authUser = await getCurrentUser();
+  if (!authUser?.email) return null;
+
+  const user = await prisma.user.findUnique({
+    where: { supabaseUserId: authUser.id },
+    include: { profile: true },
+  });
+  if (!user) return { user: null, email: authUser.email, profile: null };
+  return { user, email: user.email, profile: user.profile };
+}
+
 /** The signed-in user plus their profile, or null profile if not onboarded. */
 export async function getUserWithProfile() {
   const user = await requireAppUser();
