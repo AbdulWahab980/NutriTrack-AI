@@ -23,7 +23,8 @@
     "check:security": "tsx scripts/check-security.ts",
     "check:ratelimit": "tsx scripts/check-ratelimit.ts",
     "check:water": "tsx scripts/check-water.ts",
-    "check:weight": "tsx scripts/check-weight.ts"
+    "check:weight": "tsx scripts/check-weight.ts",
+    "check:goals": "tsx scripts/check-goals.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.0",

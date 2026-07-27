@@ -15,7 +15,7 @@ const MAIN = [
   { href: "/water", label: "Water", icon: DropIcon },
   { href: "/weight", label: "Weight", icon: ScaleIcon },
   { href: "/trends", label: "Trends", icon: ChartIcon },
-  { href: "/profile", label: "Goals", icon: TargetIcon },
+  { href: "/goals", label: "Goals", icon: TargetIcon },
 ] as const;
 
 const SECONDARY = [
