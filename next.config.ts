@@ -27,6 +27,12 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
 
+  // Meal photos are downscaled client-side, but the base64 data URL still
+  // needs more than the 1MB server-action default.
+  experimental: {
+    serverActions: { bodySizeLimit: "5mb" },
+  },
+
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },

@@ -1,4 +1,4 @@
-import { extractMealLog } from "@/lib/llm/extract";
+import { extractMealLog, type ExtractedLog } from "@/lib/llm/extract";
 import { lookupNutrition } from "@/lib/nutrition/service";
 
 /**
@@ -49,9 +49,17 @@ export type LogDraft = {
 
 const round = (v: number) => Math.round(v * 10) / 10;
 
+/** Text path: extract from a message, then resolve nutrition. */
 export async function buildDraft(message: string): Promise<LogDraft> {
-  const extracted = await extractMealLog(message);
+  return resolveDraft(await extractMealLog(message));
+}
 
+/**
+ * Resolves an already-extracted log (from text OR a photo) into a reviewable
+ * draft by looking up real nutrition for every item. Shared so the scan flow
+ * and the chat flow price food identically.
+ */
+export async function resolveDraft(extracted: ExtractedLog): Promise<LogDraft> {
   const meals: DraftMeal[] = await Promise.all(
     extracted.meals.map(async (meal) => ({
       mealType: meal.meal_type,

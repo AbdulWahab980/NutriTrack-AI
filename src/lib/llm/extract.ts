@@ -39,7 +39,7 @@ export type ExtractedItem = ExtractedLog["meals"][number]["items"][number];
  * generated from the Zod schema) so the exact contract sent to the model is
  * visible and reviewable — this is the accuracy-critical boundary.
  */
-const EXTRACTION_JSON_SCHEMA = {
+export const EXTRACTION_JSON_SCHEMA = {
   name: "log_meal_data",
   strict: true,
   schema: {

@@ -89,7 +89,7 @@ export default async function DashboardPage() {
 
       {/* --- quick actions --- */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <QuickActionCard href="/log" title="Scan Meal" subtitle="Log your meal" icon={<ScanIcon className="h-5 w-5" />} />
+        <QuickActionCard href="/scan" title="Scan Meal" subtitle="Snap a photo of your meal" icon={<ScanIcon className="h-5 w-5" />} />
         <QuickActionCard href="/log" title="Add Food" subtitle="Log your food manually" icon={<PlusIcon className="h-5 w-5" />} />
         <QuickActionCard href="/coach" title="Ask AI Coach" subtitle="Get personalized advice" icon={<ChatIcon className="h-5 w-5" />} />
         <QuickActionCard href="/log" title="Log Water" subtitle="Track your water intake" icon={<DropIcon className="h-5 w-5" />} />
