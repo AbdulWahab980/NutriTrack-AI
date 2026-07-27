@@ -12,7 +12,7 @@ const MAIN = [
   { href: "/log", label: "Food Log", icon: UtensilsIcon },
   { href: "/coach", label: "AI Coach", icon: SparkleIcon },
   { href: "/trends", label: "Nutrition", icon: AppleIcon },
-  { href: "/log", label: "Water", icon: DropIcon, match: "__water" },
+  { href: "/water", label: "Water", icon: DropIcon },
   { href: "/trends", label: "Weight", icon: ScaleIcon, match: "__weight" },
   { href: "/trends", label: "Trends", icon: ChartIcon },
   { href: "/profile", label: "Goals", icon: TargetIcon },

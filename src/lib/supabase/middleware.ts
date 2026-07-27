@@ -6,6 +6,7 @@ import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/lib/env";
 const PROTECTED_PREFIXES = [
   "/today",
   "/log",
+  "/water",
   "/trends",
   "/profile",
   "/onboarding",
