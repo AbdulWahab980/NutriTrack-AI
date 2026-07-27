@@ -7,6 +7,7 @@ const PROTECTED_PREFIXES = [
   "/today",
   "/log",
   "/water",
+  "/weight",
   "/trends",
   "/profile",
   "/onboarding",
