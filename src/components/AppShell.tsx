@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { Sidebar } from "./Sidebar";
+import { MobileNav } from "./MobileNav";
 import { TopBar } from "./TopBar";
 
 /** Routes rendered without the dashboard chrome (auth + onboarding flows). */
@@ -37,12 +38,13 @@ export function AppShell({
     <div className="flex min-h-screen">
       <Sidebar streakDays={streakDays} />
       <div className="nt-scroll flex min-w-0 flex-1 flex-col">
+        <MobileNav firstName={firstName} streakDays={streakDays} />
         <TopBar
           firstName={firstName}
           subtitle={subtitle}
           notifications={notifications}
         />
-        <main className="flex-1 px-5 py-6 md:px-8">{children}</main>
+        <main className="flex-1 px-4 py-6 md:px-8">{children}</main>
         {/* Persistent medical disclaimer (spec §3.8). */}
         <footer className="px-5 pb-6 pt-2 md:px-8">
           <p className="text-center text-xs text-muted">

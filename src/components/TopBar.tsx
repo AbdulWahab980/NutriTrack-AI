@@ -26,16 +26,17 @@ export function TopBar({
   const initial = (firstName || "?").charAt(0).toUpperCase();
 
   return (
-    <header className="flex flex-wrap items-center justify-between gap-4 px-5 pt-6 md:px-8">
+    <header className="flex flex-wrap items-center justify-between gap-4 px-4 pt-6 md:px-8">
       <div className="min-w-0">
-        <h1 className="text-2xl font-bold tracking-tight md:text-[28px]">
+        <h1 className="text-xl font-bold tracking-tight sm:text-2xl md:text-[28px]">
           {hour === null ? "Hello" : greeting(hour)}, {firstName}{" "}
           <span aria-hidden>👋</span>
         </h1>
         <p className="mt-0.5 text-sm text-muted">{subtitle}</p>
       </div>
 
-      <div className="flex items-center gap-3">
+      {/* Right cluster is redundant on mobile (the mobile bar has the avatar). */}
+      <div className="hidden items-center gap-3 md:flex">
         <div className="relative hidden sm:block">
           <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
           <input

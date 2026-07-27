@@ -2,26 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  HomeIcon, UtensilsIcon, SparkleIcon, AppleIcon, DropIcon, ScaleIcon,
-  ChartIcon, TargetIcon, UserIcon, GearIcon, LeafIcon, FlameIcon,
-} from "./icons";
-
-const MAIN = [
-  { href: "/today", label: "Dashboard", icon: HomeIcon },
-  { href: "/log", label: "Food Log", icon: UtensilsIcon },
-  { href: "/coach", label: "AI Coach", icon: SparkleIcon },
-  { href: "/trends", label: "Nutrition", icon: AppleIcon },
-  { href: "/water", label: "Water", icon: DropIcon },
-  { href: "/weight", label: "Weight", icon: ScaleIcon },
-  { href: "/trends", label: "Trends", icon: ChartIcon },
-  { href: "/goals", label: "Goals", icon: TargetIcon },
-] as const;
-
-const SECONDARY = [
-  { href: "/profile", label: "Profile", icon: UserIcon },
-  { href: "/settings", label: "Settings", icon: GearIcon },
-] as const;
+import { LeafIcon, FlameIcon, HomeIcon } from "./icons";
+import { MAIN_NAV, SECONDARY_NAV } from "./nav-items";
 
 export function Sidebar({
   streakDays,
@@ -65,13 +47,13 @@ export function Sidebar({
 
         {/* main nav */}
         <nav className="flex flex-col gap-1">
-          {MAIN.map((n) => item(n.href, n.label, n.icon, isActive(n.href)))}
+          {MAIN_NAV.map((n) => item(n.href, n.label, n.icon, isActive(n.href)))}
         </nav>
 
         <div className="my-4 border-t border-border" />
 
         <nav className="flex flex-col gap-1">
-          {SECONDARY.map((n) => item(n.href, n.label, n.icon, isActive(n.href)))}
+          {SECONDARY_NAV.map((n) => item(n.href, n.label, n.icon, isActive(n.href)))}
         </nav>
 
         {/* streak widget */}
