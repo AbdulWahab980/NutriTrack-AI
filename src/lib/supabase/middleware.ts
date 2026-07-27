@@ -10,6 +10,7 @@ const PROTECTED_PREFIXES = [
   "/water",
   "/weight",
   "/goals",
+  "/nutrition",
   "/trends",
   "/profile",
   "/onboarding",

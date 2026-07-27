@@ -3,14 +3,13 @@ import { requireOnboardedUser } from "@/lib/user";
 import { getToday } from "@/lib/date";
 import { getTrendSummary, trendInsights } from "@/lib/trends";
 import { TrendChart } from "@/components/TrendChart";
-import { WeightLogger } from "@/components/WeightLogger";
 
 export const metadata = { title: "Trends · NutriTrack AI" };
 
 const RANGES = [
-  { days: 7, label: "7 days" },
-  { days: 30, label: "30 days" },
-  { days: 90, label: "90 days" },
+  { days: 7, label: "Week" },
+  { days: 30, label: "Month" },
+  { days: 90, label: "3 Months" },
 ] as const;
 
 export default async function TrendsPage({
@@ -38,7 +37,9 @@ export default async function TrendsPage({
       <div>
         <h1 className="text-2xl font-semibold">Trends</h1>
         <p className="mt-1 text-sm text-muted">
-          Patterns over time — never a verdict on any single day.
+          Patterns over time — never a verdict on any single day. Tap any point
+          to see that day&apos;s detail in{" "}
+          <Link href="/nutrition" className="font-medium text-primary">Nutrition</Link>.
         </p>
       </div>
 
@@ -136,16 +137,19 @@ export default async function TrendsPage({
               : "not logged yet"}
           </span>
         </div>
-        {latestWeight && (
+        {latestWeight ? (
           <div className="mt-2">
             <TrendChart days={summary.days} dataKey="weightKg" unit="kg" />
           </div>
+        ) : (
+          <p className="mt-2 text-sm text-muted">No weight logged in this range.</p>
         )}
-        <WeightLogger current={latestWeight?.weightKg ?? profile.weightKg} />
-        <p className="mt-2 text-[11px] text-muted">
-          Optional. Logging weight is entirely up to you — it isn&apos;t needed
-          for anything else in the app to work.
-        </p>
+        <Link
+          href="/weight"
+          className="mt-3 inline-block rounded-lg border border-border px-4 py-2 text-sm font-medium text-primary"
+        >
+          Log weight
+        </Link>
       </div>
     </section>
   );

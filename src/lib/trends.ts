@@ -64,10 +64,11 @@ export async function getTrendSummary(
   const start = new Date(endDate);
   start.setUTCDate(start.getUTCDate() - (rangeDays - 1));
 
+  // Trends is aggregate-only: it reads daily_logs across a range and never
+  // joins meal_entries. "Logged" is derived from the day's stored totals.
   const [logs, weights] = await Promise.all([
     prisma.dailyLog.findMany({
       where: { userId, logDate: { gte: start, lte: endDate } },
-      include: { _count: { select: { mealEntries: true } } },
     }),
     prisma.weightEntry.findMany({
       where: { userId, logDate: { gte: start, lte: endDate } },
@@ -91,7 +92,7 @@ export async function getTrendSummary(
       proteinG: log?.totalProteinG ?? 0,
       waterMl: log?.totalWaterMl ?? 0,
       weightKg: weightByDate.get(iso) ?? null,
-      logged: (log?._count.mealEntries ?? 0) > 0 || (log?.totalWaterMl ?? 0) > 0,
+      logged: (log?.totalCalories ?? 0) > 0 || (log?.totalWaterMl ?? 0) > 0,
     });
   }
 
@@ -134,7 +135,6 @@ export async function computeStreaks(
 
   const logs = await prisma.dailyLog.findMany({
     where: { userId, logDate: { gte: start, lte: endDate } },
-    include: { _count: { select: { mealEntries: true } } },
     orderBy: { logDate: "asc" },
   });
 
@@ -142,7 +142,7 @@ export async function computeStreaks(
   const hitWater = new Set<string>();
   for (const l of logs) {
     const iso = isoOf(l.logDate);
-    if (l._count.mealEntries > 0 || l.totalWaterMl > 0) logged.add(iso);
+    if (l.totalCalories > 0 || l.totalWaterMl > 0) logged.add(iso);
     if (l.totalWaterMl >= waterTargetMl && waterTargetMl > 0) hitWater.add(iso);
   }
 

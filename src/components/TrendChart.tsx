@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import {
   Line,
   LineChart,
@@ -19,12 +20,23 @@ type Props = {
 };
 
 export function TrendChart({ days, dataKey, target, unit }: Props) {
+  const router = useRouter();
+
   // Unlogged days are gaps, not zeros — plotting them as 0 would imply the
   // user ate nothing rather than simply not logging.
   const data = days.map((d) => ({
     label: d.label,
+    iso: d.iso,
     value: d.logged || dataKey === "weightKg" ? d[dataKey] : null,
   }));
+
+  // Tapping a day drills down to that day's detail — the one link from the
+  // aggregate Trends view into the single-day Nutrition view.
+  const handleClick = (state: unknown) => {
+    const s = state as { activePayload?: Array<{ payload?: { iso?: string } }> };
+    const iso = s?.activePayload?.[0]?.payload?.iso;
+    if (iso) router.push(`/nutrition?date=${iso}`);
+  };
 
   const hasAny = data.some((d) => d.value !== null && d.value !== 0);
   if (!hasAny) {
@@ -38,7 +50,12 @@ export function TrendChart({ days, dataKey, target, unit }: Props) {
   return (
     <div className="h-[160px] w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -18 }}>
+        <LineChart
+          data={data}
+          margin={{ top: 8, right: 8, bottom: 0, left: -18 }}
+          onClick={handleClick}
+          className="cursor-pointer"
+        >
           <XAxis
             dataKey="label"
             tick={{ fontSize: 10, fill: "var(--muted)" }}
@@ -83,7 +100,9 @@ export function TrendChart({ days, dataKey, target, unit }: Props) {
             stroke="var(--primary)"
             strokeWidth={2}
             dot={{ r: 2.5, fill: "var(--primary)" }}
+            activeDot={{ r: 5 }}
             connectNulls
+            isAnimationActive={false}
           />
         </LineChart>
       </ResponsiveContainer>

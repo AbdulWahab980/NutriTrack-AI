@@ -14,7 +14,7 @@ export const MAIN_NAV: NavItem[] = [
   { href: "/today", label: "Dashboard", icon: HomeIcon },
   { href: "/log", label: "Food Log", icon: UtensilsIcon },
   { href: "/coach", label: "AI Coach", icon: SparkleIcon },
-  { href: "/trends", label: "Nutrition", icon: AppleIcon },
+  { href: "/nutrition", label: "Nutrition", icon: AppleIcon },
   { href: "/water", label: "Water", icon: DropIcon },
   { href: "/weight", label: "Weight", icon: ScaleIcon },
   { href: "/trends", label: "Trends", icon: ChartIcon },
